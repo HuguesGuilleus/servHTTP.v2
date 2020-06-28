@@ -13,7 +13,7 @@ import (
 
 // Add a file handler from file root r for the host h and the path p.
 func (s *S) AddFile(h, p, r string) error {
-	s.AddHandler(h, p, "file", r, http.FileServer(http.Dir(r)))
+	s.AddHandler(h, p, "FILE", http.FileServer(http.Dir(r)))
 	return nil
 }
 
@@ -23,13 +23,17 @@ func (s *S) AddReverse(h, p, to string) error {
 	if err != nil {
 		return err
 	}
-	s.AddHandler(h, p, "reverse", to, httputil.NewSingleHostReverseProxy(u))
+	reverse := httputil.NewSingleHostReverseProxy(u)
+	reverse.ErrorLog = log.New(log.Writer(),
+		"[REVERSE ERROR]",
+		log.Flags()|log.Lmsgprefix)
+	s.AddHandler(h, p, "REVERSE", reverse)
 	return nil
 }
 
 // Add a retirect handler for the destination to.
 func (s *S) AddRedirect(h, p, to string) error {
-	s.AddHandler(h, p, "redirect", to, func() http.HandlerFunc {
+	s.AddHandler(h, p, "REDIRECT", func() http.HandlerFunc {
 		if to[len(to)-1] == '/' {
 			to = to[:len(to)-1]
 		}
@@ -41,17 +45,17 @@ func (s *S) AddRedirect(h, p, to string) error {
 }
 
 // Add a hanlder for th host h, and with the path p.
-func (s *S) AddHandler(h, p, t, param string, f http.Handler) {
+func (s *S) AddHandler(h, p, t string, f http.Handler) {
 	if s.hosts == nil {
 		s.hosts = make(map[string]bool)
 	}
 	s.hosts[h] = true
 
-	l := "[REQ]" + h + p + " " + t + "<" + param + ">"
+	prefix := "[" + t + "] " + h + p
 	strip := http.StripPrefix(p, f).ServeHTTP
 
 	s.m.HandleFunc(h+p, func(w http.ResponseWriter, r *http.Request) {
-		log.Println(l, r.RemoteAddr, r.Method, maxURL(r.RequestURI))
+		logReq(prefix, "", r)
 		strip(w, r)
 	})
 }

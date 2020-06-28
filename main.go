@@ -27,6 +27,7 @@ func init() {
 var Server serv.S
 
 func main() {
+	log.SetFlags(log.Ltime)
 	log.Println("[START]")
 
 	// configFile := "conf.ini"

@@ -9,6 +9,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 // One serve.
@@ -41,7 +43,13 @@ func (s *S) ServeTLS(a string) {
 		log.Fatal("[LISTEN ERROR]", a, err)
 		return
 	}
-	http.Serve(l, &s.m)
+
+	(&http.Server{
+		Handler: &s.m,
+		ErrorLog: log.New(log.Writer(),
+			"[LISTEN ERROR] <"+a+"> ",
+			log.Flags()|log.Lmsgprefix),
+	}).Serve(l)
 }
 
 // Serve to redirect all hosts to https
@@ -50,7 +58,7 @@ func (s *S) Serve(a, chalenge string) {
 	err := http.ListenAndServe(a, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try to response with a chalenge.
 		if f, ok := openChalenge(chalenge, r.URL.Path); ok {
-			log.Println("[CHALENGE]", r.Host, r.RemoteAddr, r.Method, maxURL(r.RequestURI))
+			logReq("[CHALENGE]", r.Host, r)
 			defer f.Close()
 			io.Copy(w, f)
 			return
@@ -58,13 +66,13 @@ func (s *S) Serve(a, chalenge string) {
 
 		// Search this host.
 		if !s.hosts[r.Host] {
-			log.Println("[UNKNOWN HOST]", r.Host, r.RemoteAddr, r.Method, maxURL(r.RequestURI))
+			logReq("[UNKNOWN HOST]", r.Host, r)
 			http.Error(w, "Host not found", http.StatusNotFound)
 			return
 		}
 
 		// redirect to secure hosts
-		log.Println("[UNSECURE]", r.Host, r.RemoteAddr, r.Method, maxURL(r.RequestURI))
+		logReq("[UNSECURE]", r.Host, r)
 		http.Redirect(w, r, "https://"+r.Host+r.RequestURI,
 			http.StatusPermanentRedirect)
 	}))
@@ -72,13 +80,7 @@ func (s *S) Serve(a, chalenge string) {
 	log.Fatal("[LISTEN ERROR]", a, err)
 }
 
-func maxURL(u string) string {
-	if len(u) > 60 {
-		return u[:60] + "..."
-	}
-	return u
-}
-
+// Open and return a regular file for chalenge.
 func openChalenge(chalenge, p string) (http.File, bool) {
 	f, e1 := http.Dir(chalenge).Open(p)
 	if e1 != nil {
@@ -91,4 +93,24 @@ func openChalenge(chalenge, p string) (http.File, bool) {
 	}
 
 	return f, true
+}
+
+// Log a requet
+func logReq(prefix, rhost string, r *http.Request) {
+	u := r.RequestURI
+	if len(u) > 100 {
+		u = u[:100] + "..."
+	}
+
+	h := ""
+	if rhost != "" {
+		h = "(host:" + strconv.Quote(rhost) + ")"
+	}
+
+	log.Println(prefix, "=>",
+		h,
+		strings.SplitN(r.RemoteAddr, ":", 2)[0],
+		r.Method,
+		u,
+	)
 }
