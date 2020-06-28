@@ -8,7 +8,8 @@ clear
 
 # Download the binary
 mkdir .servHTTP
-wget "https://github.com/HuguesGuilleus/servHTTP.v2/releases/download/v1.0/servHTTP.v2_linux_amd64.tar.gz"
+cd .servHTTP
+wget "https://github.com/HuguesGuilleus/servHTTP.v2/releases/latest/download/servHTTP.v2_linux_amd64.tar.gz"
 tar xzfv servHTTP.v2_linux_amd64.tar.gz
 cp servHTTP.v2_linux_amd64 /bin/servHTTP
 cd ..
@@ -17,8 +18,7 @@ rm -r .servHTTP
 
 # Configure the service
 touch /etc/servHTTP.ini
-echo <<EOF
-[Unit]
+echo '[Unit]
 Description=SertvHTTP
 After=network.target
 
@@ -27,5 +27,8 @@ Type=simple
 Restart=always
 User=root
 ExecStart=/bin/servHTTP
+' > /etc/systemd/system/servHTTP.service
 
-EOF > /etc/systemd/system/servHTTP.service
+
+# Start the service
+systemctl start servHTTP.service
