@@ -20,14 +20,24 @@ crt = ...
 
 ## Host
 ```ini
+; File handler
+[www.example.com]
+; Two option for static file handler
+/ = /var/www/
+/ = file /var/www/
+; you can define directory index template. I't Go HTML template that is executed
+; on a slice of os.FileInfo
+index = /path/to/template
+
+; redirect handler
 [example.com]
 / = redirect https://www.example.com
 
-[www.example.com]
-; Two option for file
-/ = /var/www/
-/ = file /var/www/
-
+; Reverse proxy handler (work with web socket)
 [reverse.example.com]
 / = reverse http://localhost:3000
+
+; You can also define for each host, specific page for error
+e404 = /path/to/error
+e502 = /path/to/error
 ```

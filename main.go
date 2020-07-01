@@ -52,8 +52,24 @@ func main() {
 				log.Fatalf("[LOAD CERT/KEY ERROR] in secion %q: %v\n", n, err)
 			}
 		} else {
+			// Load Static files
+			static := serv.NewStatic()
+			if s.HasKey("index") {
+				static.Index = serv.StaticLoadTempl(s.Key("index").String(), static.Index())
+			}
+			if s.HasKey("e404") {
+				static.E404 = serv.StaticLoad(s.Key("e404").String(), static.E404())
+			}
+			if s.HasKey("e502") {
+				static.E502 = serv.StaticLoad(s.Key("e502").String(), static.E502())
+			}
+			// Load handler for path
 			for _, k := range s.Keys() {
-				AddRule(n, k.Name(), k.Strings(" "))
+				switch k.Name() {
+				case "index", "e404", "e502":
+				default:
+					AddRule(n, k.Name(), k.Strings(" "), static)
+				}
 			}
 		}
 	}
@@ -68,14 +84,14 @@ func main() {
 	select {}
 }
 
-// Add one rule.
-func AddRule(h, p string, arg []string) {
+// Add one rule of type path.
+func AddRule(h, p string, arg []string, static *serv.Static) {
 	if !path.IsAbs(p) {
 		log.Fatalf("[CONFIG ERORR] in host %q, path %q is not abolute\n", h, p)
 	}
 
-	var add func(string, string, string) error // A Server Add handler
-	var a string                               // the argument to pass to add
+	var add func(string, string, string, *serv.Static) error // A Server Add handler
+	var a string                                        // the argument to pass to add
 	if len(arg) > 1 {
 		a = arg[1]
 		switch arg[0] {
@@ -93,7 +109,7 @@ func AddRule(h, p string, arg []string) {
 		a = arg[0]
 	}
 
-	if err := add(h, p, a); err != nil {
+	if err := add(h, p, a, static); err != nil {
 		log.Fatalf("[CONFIG ERORR] in host %q path %q: %v\n", h, p, err)
 	}
 }

@@ -104,11 +104,10 @@ func logReq(prefix, rhost string, r *http.Request) {
 
 	h := ""
 	if rhost != "" {
-		h = "(host:" + strconv.Quote(rhost) + ")"
+		h = " (host:" + strconv.Quote(rhost) + ")"
 	}
 
-	log.Println(prefix, "=>",
-		h,
+	log.Println(prefix, "=>"+h,
 		strings.SplitN(r.RemoteAddr, ":", 2)[0],
 		r.Method,
 		u,

@@ -25,10 +25,10 @@ type Static struct {
 // New Static with default value.
 func NewStatic() *Static {
 	return &Static{
-		Index: staticTempl("", template.Must(
+		Index: StaticLoadTempl("", template.Must(
 			template.New("").Parse(defaultIndex))),
-		E404: static("", []byte(defaultE404)),
-		E502: static("", []byte(defaultE502)),
+		E404: StaticLoad("", []byte(defaultE404)),
+		E502: StaticLoad("", []byte(defaultE502)),
 	}
 }
 
@@ -43,7 +43,7 @@ const defaultE502 = `<!doctype html><html lang=en><head><meta charset=utf-8><met
 
 // Return a function never nil that return the content of the file p or
 // the default content if error or p is empty.
-func static(p string, d []byte) func() []byte {
+func StaticLoad(p string, d []byte) func() []byte {
 	if p == "" {
 		return func() []byte { return d }
 	}
@@ -88,7 +88,7 @@ func static(p string, d []byte) func() []byte {
 
 // Return a function never nil that return the content of the file p or
 // teh default content in error or if p is empty.
-func staticTempl(p string, d *template.Template) func() *template.Template {
+func StaticLoadTempl(p string, d *template.Template) func() *template.Template {
 	if p == "" {
 		return func() *template.Template { return d }
 	}
