@@ -13,12 +13,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
 // Add a file handler from file root r for the host h and the path p.
 func (s *S) AddFile(h, p, r string, static *Static) error {
-
 	if !path.IsAbs(r) {
 		return fmt.Errorf("%q is not an absolute path", r)
 	}
@@ -36,14 +36,20 @@ func (s *S) AddFile(h, p, r string, static *Static) error {
 		name := path.Base(r.URL.Path)
 
 		if stat.IsDir() {
-			if !strings.HasSuffix(r.URL.Path, "/") {
+			if !strings.HasSuffix(r.RequestURI, "/") {
 				http.Redirect(w, r, r.URL.Path+"/", http.StatusPermanentRedirect)
 				return
 			}
 			index, statIndex, err := openFile(d, r.URL.Path+"index.html")
 			if err != nil || statIndex.IsDir() {
-				w.Header().Set("Content-Type", "text/html")
 				list, _ := f.Readdir(0)
+				sort.Slice(list, func(i int, j int) bool {
+					if list[i].IsDir() != list[j].IsDir() {
+						return list[i].IsDir()
+					}
+					return list[i].Name() < list[j].Name()
+				})
+				w.Header().Set("Content-Type", "text/html")
 				static.Index().Execute(w, list)
 				return
 			}
@@ -99,7 +105,8 @@ func (s *S) AddRedirect(h, p, to string, _ *Static) error {
 			to = to[:len(to)-1]
 		}
 		return func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, to+r.URL.String(), http.StatusMovedPermanently)
+			http.Redirect(w, r, to+r.RequestURI, http.StatusMovedPermanently)
+			// http.Redirect(w, r, to+r.URL.String(), http.StatusMovedPermanently)
 		}
 	}())
 	return nil
