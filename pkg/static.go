@@ -4,7 +4,12 @@
 
 package serv
 
+//xgo:generate staticFile --dev -out.file=front/all.go -out.pkg=front Index=pkg/front/index.gohtml  IndexJs=pkg/front/index.html E404=pkg/front/e404.gohtml E502=pkg/front/e502.gohtml
+
+//go:generate staticFile -out.file=front/all.go -out.pkg=front Index=front/index.gohtml IndexJs=front/index.html E404=front/e404.gohtml E502=front/e502.gohtml
+
 import (
+	"./front"
 	"html/template"
 	"log"
 	"os"
@@ -17,29 +22,25 @@ const StaticUpdate time.Duration = time.Second * 10
 
 // All templates.
 type Static struct {
-	Index func() *template.Template
-	E404  func() []byte
-	E502  func() []byte
+	Index   func() *template.Template
+	IndexJs func() []byte
+	E404    func() []byte
+	E502    func() []byte
 }
 
 // New Static with default value.
 func NewStatic() *Static {
 	return &Static{
-		Index: StaticLoadTempl("", template.Must(
-			template.New("").Parse(defaultIndex))),
-		E404: StaticLoad("", []byte(defaultE404)),
-		E502: StaticLoad("", []byte(defaultE502)),
+		Index: func() *template.Template {
+			return template.Must(
+				template.New("").Parse(string(front.Index())),
+			)
+		},
+		IndexJs: front.IndexJs,
+		E404:    front.E404,
+		E502:    front.E502,
 	}
 }
-
-// Default template to index directory
-const defaultIndex = `<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>body{max-width:70em;margin:auto;padding:1em;font-family:monospace;font-size:xx-large;background:#d3d3d3}h1{margin:0}#link{display:table;padding:.2em .5em;background:#fff}a{color:#1e90ff;background:inherit;text-decoration:none}a:hover{color:#00008b;text-decoration:underline}#list{list-style:none;padding:0}.info{font-size:inherit;color:#0000004f}</style><title>Index</title></head><body><h1>Index</h1><div id=link></div><ul id=list>{{range .}}<li><span class=info>[{{.ModTime.UTC.Format "2006-01-02 15:04:05 UTC"}}]</span> {{if .IsDir }}<a href={{.Name}}/>{{.Name}}/</a>{{else}}<a href={{.Name}} download=download>{{.Name}}</a> <span class="info size">{{.Size}}</span>{{end}}</li>{{end}}</ul><script>document.addEventListener('DOMContentLoaded',()=>{document.getElementById('link').innerHTML=document.location.pathname.split('/').filter((v,i)=>!i||v).map((v,i,a)=>'<a href="'+a.slice(0,i+1).join('/')+'/">'+v+'/</a>').join('');document.title=document.location.pathname.replace(/\/$/,'').split('/').pop();document.querySelectorAll('.size').forEach(s=>{s.title=s.innerText+' o';let h=((n)=>{if(n<1000){return n+'\u00A0o';}else if(n<1000_000){return(n/1000).toFixed(1)+'\u00A0K';}else if(n<1000_000_000){return(n/1000_000).toFixed(1)+'\u00A0M';}else if(n<1000_000_000_000){return(n/1000_000_000).toFixed(1)+'\u00A0G';}else if(n<1000_000_000_000_000){return(n/1000_000_000_000).toFixed(1)+'\u00A0T';}})(new Number(s.innerText));s.innerText='('+h+')'});},{once:true});</script></body></html>`
-
-// Default page for error 404
-const defaultE404 = `<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>body{font-family:monospace;font-size:xxx-large;text-align:center;background:#d3d3d3}h1{margin-top:30vh}#link{margin:auto;padding:.2em 1.5em;display:table;background:#fff}a{color:#1e90ff;background:inherit;text-decoration:none}a:hover{color:#00008b;text-decoration:underline}</style><title>Error 404</title></head><body><h1>Error 404: Not found</h1><div id=link></div><script>document.addEventListener('DOMContentLoaded',()=>{document.getElementById('link').innerHTML=document.location.pathname.split('/').filter((v,i)=>!i||v).map((v,i,a)=>'<a href="'+a.slice(0,i+1).join('/')+'/">'+v+'/</a>').join('')},{once:true,});</script></body></html>`
-
-// Default page for error 502
-const defaultE502 = `<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><style>body{font-family:monospace;font-size:xxx-large;text-align:center;background:#d3d3d3}h1{margin-top:30vh}#link{margin:auto;padding:.2em 1.5em;display:table;background:#fff}a{color:#1e90ff;background:inherit;text-decoration:none}a:hover{color:#00008b;text-decoration:underline}</style><title>Error 502</title></head><body><h1>Error 502: Bad gateway</h1><div id=link></div><script>document.addEventListener('DOMContentLoaded',()=>{document.getElementById('link').innerHTML=document.location.pathname.split('/').filter((v,i)=>!i||v).map((v,i,a)=>'<a href="'+a.slice(0,i+1).join('/')+'/">'+v+'/</a>').join('')},{once:true,});</script></body></html>`
 
 // Return a function never nil that return the content of the file p or
 // the default content if error or p is empty.

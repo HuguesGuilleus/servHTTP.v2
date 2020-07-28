@@ -9,7 +9,19 @@ curl https://raw.githubusercontent.com/HuguesGuilleus/servHTTP.v2/master/install
 ```
 
 # Configuration
-File `/etc/servHTTP.ini`
+File `/etc/servHTTP.ini` or the first args.
+
+## General
+```ini
+; The log directory, each day a new file a created.
+log = /var/log/servHTTP/
+; disable the TLS listen and load certificates, use it when you don't have them.
+notls = false
+addr = :80
+addrtls = :443
+chalenge = /var/letsencrypt
+```
+
 
 ## Certificate
 ```ini

@@ -30,7 +30,6 @@ func main() {
 	log.SetFlags(log.Ltime)
 	log.Println("[START]")
 
-	// configFile := "conf.ini"
 	configFile := "/etc/servHTTP.ini"
 	if len(os.Args) > 1 {
 		configFile = os.Args[1]
@@ -57,6 +56,10 @@ func main() {
 			if s.HasKey("index") {
 				static.Index = serv.StaticLoadTempl(s.Key("index").String(), static.Index())
 			}
+			if s.HasKey("indexjs") {
+				static.IndexJs = serv.StaticLoad(s.Key("indexjs").String(), static.IndexJs())
+				// static.IndexJs = serv.StaticLoadTempl(s.Key("indexjs").String(), static.IndexJs())
+			}
 			if s.HasKey("e404") {
 				static.E404 = serv.StaticLoad(s.Key("e404").String(), static.E404())
 			}
@@ -66,7 +69,7 @@ func main() {
 			// Load handler for path
 			for _, k := range s.Keys() {
 				switch k.Name() {
-				case "index", "e404", "e502":
+				case "index", "indexjs", "e404", "e502":
 				default:
 					AddRule(n, k.Name(), k.Strings(" "), static)
 				}
@@ -91,7 +94,7 @@ func AddRule(h, p string, arg []string, static *serv.Static) {
 	}
 
 	var add func(string, string, string, *serv.Static) error // A Server Add handler
-	var a string                                        // the argument to pass to add
+	var a string                                             // the argument to pass to add
 	if len(arg) > 1 {
 		a = arg[1]
 		switch arg[0] {
