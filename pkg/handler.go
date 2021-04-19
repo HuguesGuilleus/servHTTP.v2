@@ -86,7 +86,7 @@ func newFile(f os.FileInfo) File {
 	return nf
 }
 
-// Generate and index, selrialise it or use template and send it to the client.
+// Generate and index, serialise it or use template and send it to the client.
 func serverDir(w http.ResponseWriter, r *http.Request, dir http.File, static *Static) {
 	lister := func() []File {
 		listInfo, _ := dir.Readdir(0)

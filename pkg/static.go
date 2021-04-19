@@ -9,7 +9,7 @@ package serv
 //go:generate staticFile -out.file=front/all.go -out.pkg=front Index=front/index.gohtml IndexJs=front/index.html E404=front/e404.gohtml E502=front/e502.gohtml
 
 import (
-	"./front"
+	"github.com/HuguesGuilleus/servHTTP.v2/pkg/front"
 	"html/template"
 	"log"
 	"os"
@@ -88,7 +88,7 @@ func StaticLoad(p string, d []byte) func() []byte {
 }
 
 // Return a function never nil that return the content of the file p or
-// teh default content in error or if p is empty.
+// the default content in error or if p is empty.
 func StaticLoadTempl(p string, d *template.Template) func() *template.Template {
 	if p == "" {
 		return func() *template.Template { return d }

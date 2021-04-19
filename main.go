@@ -5,8 +5,8 @@
 package main
 
 import (
-	"./pkg"
 	"github.com/HuguesGuilleus/go-logoutput"
+	"github.com/HuguesGuilleus/servHTTP.v2/pkg"
 	"gopkg.in/ini.v1"
 	"log"
 	"os"

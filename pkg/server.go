@@ -36,20 +36,20 @@ func (s *S) ServeTLS(a string) {
 		s.Config.NextProtos = []string{"h2", "http/1.1"}
 	}
 
-	log.Println("[LISTEN TLS]", a)
-
 	l, err := tls.Listen("tcp", a, &s.Config)
 	if err != nil {
 		log.Fatal("[LISTEN ERROR]", a, err)
 		return
 	}
+	log.Println("[LISTEN TLS]", a)
 
-	(&http.Server{
+	serv := http.Server{
 		Handler: &s.m,
 		ErrorLog: log.New(log.Writer(),
 			"[LISTEN ERROR] <"+a+"> ",
 			log.Flags()|log.Lmsgprefix),
-	}).Serve(l)
+	}
+	serv.Serve(l)
 }
 
 // Serve to redirect all hosts to https
@@ -57,7 +57,7 @@ func (s *S) Serve(a, chalenge string) {
 	log.Println("[LISTEN UNSAFE]", a, chalenge)
 	err := http.ListenAndServe(a, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try to response with a chalenge.
-		if f, ok := openChalenge(chalenge, r.URL.Path); ok {
+		if f := openChalenge(chalenge, r.URL.Path); f != nil {
 			logReq("[CHALENGE]", r.Host, r)
 			defer f.Close()
 			io.Copy(w, f)
@@ -72,27 +72,26 @@ func (s *S) Serve(a, chalenge string) {
 		}
 
 		// redirect to secure hosts
-		logReq("[UNSECURE]", r.Host, r)
+		logReq("[2HTTPS]", r.Host, r)
 		http.Redirect(w, r, "https://"+r.Host+r.RequestURI,
 			http.StatusPermanentRedirect)
 	}))
-
 	log.Fatal("[LISTEN ERROR]", a, err)
 }
 
 // Open and return a regular file for chalenge.
-func openChalenge(chalenge, p string) (http.File, bool) {
+func openChalenge(chalenge, p string) http.File {
 	f, e1 := http.Dir(chalenge).Open(p)
 	if e1 != nil {
-		return nil, false
+		return nil
 	}
 
 	if stats, err := f.Stat(); err != nil || stats.IsDir() {
 		f.Close()
-		return nil, false
+		return nil
 	}
 
-	return f, true
+	return f
 }
 
 // Log a requet
