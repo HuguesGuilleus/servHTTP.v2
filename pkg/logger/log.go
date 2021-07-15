@@ -64,7 +64,7 @@ func (l *Logger) HTTP(op string, r *http.Request) {
 	b.WriteByte(' ')
 	b.WriteString(r.Method)
 	b.WriteByte(' ')
-	b.WriteString(r.URL.Host)
+	b.WriteString(r.Host)
 	b.WriteString(path)
 	b.WriteByte('\n')
 
@@ -76,9 +76,9 @@ func (l *Logger) begin(op string) (b *bytes.Buffer) {
 	b = l.pool.Get().(*bytes.Buffer)
 	b.Reset()
 
-	b.WriteString(time.Now().UTC().Format("2006-01-02 15:04:05 ["))
+	b.WriteByte('[')
 	b.WriteString(op)
-	b.WriteByte(']')
+	b.WriteString(time.Now().UTC().Format("] 2006-01-02 15:04:05"))
 
 	return
 }

@@ -75,8 +75,10 @@ func Args(args []string) (ht serv.HandlerType, target string, headers handlers.H
 			ht = serv.HandlerReverse
 		case "message":
 			ht = serv.HandlerMessage
+		case "plugin":
+			return 0, "", nil, IsPlugin
 		default:
-			return 0, "", nil, fmt.Errorf("Unknwo this handler: %q", args[0])
+			return 0, "", nil, fmt.Errorf("Unknwon this handler: %q", args[0])
 		}
 		target = args[1]
 		args = args[2:]
